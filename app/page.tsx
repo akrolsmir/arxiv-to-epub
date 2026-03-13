@@ -229,7 +229,13 @@ export default function Home() {
 
         {/* Footer */}
         <p className="mt-16 font-sans text-xs font-light text-[#C4B5A4]">
-          Uses arXiv HTML renders. Not all papers are available.
+          Made by Austin and Claude.{" "}
+          <a
+            href="https://github.com/akrolsmir/arxiv-to-epub"
+            className="underline decoration-[#DDD5CA] underline-offset-2 transition-colors hover:text-[#8C7E6F]"
+          >
+            Open source
+          </a>
         </p>
       </div>
 
