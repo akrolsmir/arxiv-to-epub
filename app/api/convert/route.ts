@@ -155,6 +155,10 @@ export async function POST(request: NextRequest) {
       th, td { border: 1px solid #ccc; padding: 0.4em 0.6em; }
       .ltx_equation { margin: 1em 0; overflow-x: auto; }
       blockquote { margin: 1em 0; padding-left: 1em; border-left: 3px solid #ccc; }
+      .ltx_item { display: flex; gap: 0.4em; margin-bottom: 0.5em; }
+      .ltx_tag_item { flex-shrink: 0; }
+      .ltx_item .ltx_para { display: inline; }
+      .ltx_item .ltx_para p { display: inline; }
     `;
 
     const epubBuffer = await epub(
