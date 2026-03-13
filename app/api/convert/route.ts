@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
     if (abstractHtml) {
       chapters.push({
         title: "Abstract",
-        content: postProcessHtml(abstractHtml, hasBibliography),
+        content: `<h2>Abstract</h2>` + postProcessHtml(abstractHtml, hasBibliography),
         filename: `${chapterIndex++}_abstract.xhtml`,
       });
     }
@@ -240,6 +240,7 @@ export async function POST(request: NextRequest) {
         author: authors,
         css: epubCSS,
         version: 3,
+        prependChapterTitles: false,
         fetchTimeout: 20000,
       },
       chapters
