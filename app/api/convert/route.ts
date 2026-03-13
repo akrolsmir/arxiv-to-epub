@@ -2,26 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 import { parse, type HTMLElement } from "node-html-parser";
 import epub from "epub-gen-memory";
 
+const REFERENCES_FILENAME = "references.xhtml";
+
 /**
  * Post-process a section's HTML to fix LaTeXML structures for epub rendering:
  * - Footnotes: convert hidden inline spans to visible superscript notes
- * - Citations: strip broken cross-chapter #id links, keep visible text
- * - Bibliography: handled via CSS (flexbox on ltx_bibitem)
+ * - Citations: rewrite #id links to point to the references chapter file
  */
-function postProcessHtml(html: string): string {
+function postProcessHtml(html: string, hasBibliography: boolean): string {
   const root = parse(html);
 
   // --- Footnotes ---
-  // LaTeXML footnotes are: <span class="ltx_note ltx_role_footnote">
-  //   <sup class="ltx_note_mark">1</sup>
-  //   <span class="ltx_note_outer"><span class="ltx_note_content">...text...</span></span>
-  // </span>
-  // Convert to: <sup>1</sup><span class="epub_footnote"> [text]</span>
+  // LaTeXML: <span class="ltx_note"><sup class="ltx_note_mark">1</sup>
+  //   <span class="ltx_note_outer"><span class="ltx_note_content">...</span></span></span>
+  // Convert to visible inline footnote text
   for (const note of root.querySelectorAll(".ltx_note")) {
     const mark = note.querySelector(".ltx_note_mark");
     const content = note.querySelector(".ltx_note_content");
     if (mark && content) {
-      // Get the footnote text, stripping the duplicate mark and type label inside
       const innerMarks = content.querySelectorAll(".ltx_note_mark, .ltx_note_type, .ltx_tag_note");
       for (const m of innerMarks) m.remove();
       const footnoteText = content.text.trim();
@@ -34,14 +32,18 @@ function postProcessHtml(html: string): string {
   }
 
   // --- Citations ---
-  // LaTeXML citations: <cite class="ltx_cite"><a href="#bib.bib13">13</a></cite>
-  // or: <cite class="ltx_cite">[<a href="#bib.bib13">13</a>, <a href="#bib.bib5">5</a>]</cite>
-  // The #id links break across epub chapters. Replace <a> with plain text.
+  // LaTeXML: <cite class="ltx_cite"><a href="#bib.bib13">13</a></cite>
+  // Rewrite to cross-chapter link: href="references.xhtml#bib.bib13"
+  // If no bibliography chapter exists, fall back to plain text.
   for (const cite of root.querySelectorAll(".ltx_cite")) {
     for (const anchor of cite.querySelectorAll("a.ltx_ref")) {
       const href = anchor.getAttribute("href") || "";
-      if (href.startsWith("#")) {
-        anchor.replaceWith(`<span class="epub_cite_ref">${anchor.text}</span>`);
+      if (href.startsWith("#bib.")) {
+        if (hasBibliography) {
+          anchor.setAttribute("href", `${REFERENCES_FILENAME}${href}`);
+        } else {
+          anchor.replaceWith(`<span>${anchor.text}</span>`);
+        }
       }
     }
   }
@@ -135,12 +137,23 @@ export async function POST(request: NextRequest) {
         )
       : "";
 
+    // Detect bibliography early so citation links can reference it
+    const bibSection = root.querySelector(
+      "section.ltx_bibliography, .ltx_bibliography"
+    );
+    const hasBibliography = !!bibSection;
+
     // Extract sections as chapters
     const sections = root.querySelectorAll("section.ltx_section");
-    const chapters: { title: string; content: string }[] = [];
+    const chapters: { title: string; content: string; filename?: string }[] = [];
+    let chapterIndex = 0;
 
     if (abstractHtml) {
-      chapters.push({ title: "Abstract", content: postProcessHtml(abstractHtml) });
+      chapters.push({
+        title: "Abstract",
+        content: postProcessHtml(abstractHtml, hasBibliography),
+        filename: `${chapterIndex++}_abstract.xhtml`,
+      });
     }
 
     if (sections.length > 0) {
@@ -150,18 +163,20 @@ export async function POST(request: NextRequest) {
         );
         const chapterTitle = heading?.text?.trim() || "Untitled Section";
 
-        // Rewrite relative image URLs to absolute
         let sectionHtml = section.innerHTML;
         sectionHtml = sectionHtml.replace(
           /src="(?!https?:\/\/)(.*?)"/g,
           `src="https://arxiv.org/html/$1"`
         );
-        sectionHtml = postProcessHtml(sectionHtml);
+        sectionHtml = postProcessHtml(sectionHtml, hasBibliography);
 
-        chapters.push({ title: chapterTitle, content: sectionHtml });
+        chapters.push({
+          title: chapterTitle,
+          content: sectionHtml,
+          filename: `${chapterIndex++}_section.xhtml`,
+        });
       }
     } else {
-      // Fallback: use the main article content
       const article = root.querySelector(".ltx_document, article, main");
       if (article) {
         let content = article.innerHTML;
@@ -169,8 +184,12 @@ export async function POST(request: NextRequest) {
           /src="(?!https?:\/\/)(.*?)"/g,
           `src="https://arxiv.org/html/$1"`
         );
-        content = postProcessHtml(content);
-        chapters.push({ title: title, content: content });
+        content = postProcessHtml(content, hasBibliography);
+        chapters.push({
+          title: title,
+          content: content,
+          filename: `${chapterIndex++}_content.xhtml`,
+        });
       }
     }
 
@@ -181,17 +200,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Also grab bibliography if present
-    const bibSection = root.querySelector(
-      "section.ltx_bibliography, .ltx_bibliography"
-    );
+    // Add bibliography as the references chapter with a known filename
     if (bibSection) {
       let bibHtml = bibSection.innerHTML;
       bibHtml = bibHtml.replace(
         /src="(?!https?:\/\/)(.*?)"/g,
-        `src="https://arxiv.org/html/${paperId}/$1"`
+        `src="https://arxiv.org/html/$1"`
       );
-      chapters.push({ title: "References", content:bibHtml });
+      chapters.push({
+        title: "References",
+        content: bibHtml,
+        filename: REFERENCES_FILENAME,
+      });
     }
 
     const epubCSS = `
@@ -209,7 +229,6 @@ export async function POST(request: NextRequest) {
       .ltx_item .ltx_para { display: inline; }
       .ltx_item .ltx_para p { display: inline; }
       .epub_footnote { font-size: 0.85em; color: #555; }
-      .epub_cite_ref { }
       .ltx_bibitem { display: flex; gap: 0.5em; margin-bottom: 0.75em; }
       .ltx_tag_bibitem { flex-shrink: 0; font-weight: 600; }
       .ltx_bibblock { display: inline; }
