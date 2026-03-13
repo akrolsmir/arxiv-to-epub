@@ -8,7 +8,9 @@
     "start": "next start"
   },
   "dependencies": {
+    "epub-gen-memory": "^1.1.2",
     "next": "16.1.6",
+    "node-html-parser": "^7.1.0",
     "react": "19.2.3",
     "react-dom": "19.2.3"
   },

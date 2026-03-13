@@ -6,7 +6,7 @@ Build a Next.js (App Router) web app that converts arXiv papers to EPUB using ar
 
 Next.js 16+ (App Router), TypeScript, Tailwind CSS.
 
-Libraries: `epub-gen-memory`, `cheerio`.
+Libraries: `epub-gen-memory`, `node-html-parser`.
 
 ## Architecture — 2 pieces
 
@@ -21,7 +21,7 @@ Libraries: `epub-gen-memory`, `cheerio`.
 
 - Extract paper ID from the URL input (handle `abs/`, `html/`, `pdf/` URL patterns and bare IDs, including versioned IDs like `2301.12345v2`)
 - Fetch `https://arxiv.org/html/{paperID}`
-- Parse with cheerio:
+- Parse with node-html-parser:
   - Extract title from `<h1>` or `.ltx_title`
   - Extract authors from `.ltx_authors` or `.ltx_personname`
   - Extract abstract from `.ltx_abstract`
