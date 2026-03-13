@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
       status: 200,
       headers: {
         "Content-Type": "application/epub+zip",
-        "Content-Disposition": `attachment; filename="${paperId}.epub"`,
+        "Content-Disposition": `attachment; filename="${title.replace(/[^\w\s-]/g, "").replace(/\s+/g, " ").trim()}.epub"`,
       },
     });
   } catch (err) {
