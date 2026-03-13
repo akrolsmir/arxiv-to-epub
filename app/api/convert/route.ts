@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
         let sectionHtml = section.innerHTML;
         sectionHtml = sectionHtml.replace(
           /src="(?!https?:\/\/)(.*?)"/g,
-          `src="https://arxiv.org/html/${paperId}/$1"`
+          `src="https://arxiv.org/html/$1"`
         );
 
         chapters.push({ title: chapterTitle, content:sectionHtml });
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
         let content = article.innerHTML;
         content = content.replace(
           /src="(?!https?:\/\/)(.*?)"/g,
-          `src="https://arxiv.org/html/${paperId}/$1"`
+          `src="https://arxiv.org/html/$1"`
         );
         chapters.push({ title: title, content:content });
       }
