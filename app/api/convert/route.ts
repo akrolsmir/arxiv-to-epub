@@ -6,16 +6,23 @@ const REFERENCES_FILENAME = "references.xhtml";
 
 /**
  * Post-process a section's HTML to fix LaTeXML structures for epub rendering:
- * - Footnotes: convert hidden inline spans to visible superscript notes
+ * - Footnotes: convert to EPUB3 semantic footnotes (popup on Kindle)
  * - Citations: rewrite #id links to point to the references chapter file
+ *
+ * Returns { html, footnotes } where footnotes are <aside> elements to append.
  */
-function postProcessHtml(html: string, hasBibliography: boolean): string {
+function postProcessHtml(html: string, hasBibliography: boolean): { html: string; footnotes: string[] } {
   const root = parse(html);
+  const footnotes: string[] = [];
 
   // --- Footnotes ---
   // LaTeXML: <span class="ltx_note"><sup class="ltx_note_mark">1</sup>
   //   <span class="ltx_note_outer"><span class="ltx_note_content">...</span></span></span>
-  // Convert to visible inline footnote text
+  //
+  // EPUB3 pattern:
+  //   Body:  <a epub:type="noteref" href="#fn1"><sup>1</sup></a>
+  //   End:   <aside epub:type="footnote" id="fn1"><p>text</p></aside>
+  let footnoteCounter = 0;
   for (const note of root.querySelectorAll(".ltx_note")) {
     const mark = note.querySelector(".ltx_note_mark");
     const content = note.querySelector(".ltx_note_content");
@@ -24,8 +31,12 @@ function postProcessHtml(html: string, hasBibliography: boolean): string {
       for (const m of innerMarks) m.remove();
       const footnoteText = content.text.trim();
       if (footnoteText) {
+        const fnId = `fn_${++footnoteCounter}`;
         note.replaceWith(
-          `<sup>${mark.text}</sup><span class="epub_footnote"> [${footnoteText}]</span>`
+          `<a epub:type="noteref" href="#${fnId}"><sup>${mark.text}</sup></a>`
+        );
+        footnotes.push(
+          `<aside class="epub-footnote" epub:type="footnote" id="${fnId}"><p><sup>${mark.text}</sup> ${footnoteText}</p></aside>`
         );
       }
     }
@@ -48,7 +59,7 @@ function postProcessHtml(html: string, hasBibliography: boolean): string {
     }
   }
 
-  return root.innerHTML;
+  return { html: root.innerHTML, footnotes };
 }
 
 function extractPaperId(input: string): string | null {
@@ -149,9 +160,10 @@ export async function POST(request: NextRequest) {
     let chapterIndex = 0;
 
     if (abstractHtml) {
+      const processed = postProcessHtml(abstractHtml, hasBibliography);
       chapters.push({
         title: "Abstract",
-        content: `<h2>Abstract</h2>` + postProcessHtml(abstractHtml, hasBibliography),
+        content: `<h2>Abstract</h2>` + processed.html + (processed.footnotes.length ? `\n<hr class="epub-footnote-sep"/>\n` + processed.footnotes.join("\n") : ""),
         filename: `${chapterIndex++}_abstract.xhtml`,
       });
     }
@@ -168,11 +180,11 @@ export async function POST(request: NextRequest) {
           /src="(?!https?:\/\/)(.*?)"/g,
           `src="https://arxiv.org/html/$1"`
         );
-        sectionHtml = postProcessHtml(sectionHtml, hasBibliography);
+        const processed = postProcessHtml(sectionHtml, hasBibliography);
 
         chapters.push({
           title: chapterTitle,
-          content: sectionHtml,
+          content: processed.html + (processed.footnotes.length ? `\n<hr class="epub-footnote-sep"/>\n` + processed.footnotes.join("\n") : ""),
           filename: `${chapterIndex++}_section.xhtml`,
         });
       }
@@ -184,10 +196,10 @@ export async function POST(request: NextRequest) {
           /src="(?!https?:\/\/)(.*?)"/g,
           `src="https://arxiv.org/html/$1"`
         );
-        content = postProcessHtml(content, hasBibliography);
+        const processed = postProcessHtml(content, hasBibliography);
         chapters.push({
           title: title,
-          content: content,
+          content: processed.html + (processed.footnotes.length ? `\n<hr class="epub-footnote-sep"/>\n` + processed.footnotes.join("\n") : ""),
           filename: `${chapterIndex++}_content.xhtml`,
         });
       }
@@ -228,7 +240,9 @@ export async function POST(request: NextRequest) {
       .ltx_tag_item { flex-shrink: 0; }
       .ltx_item .ltx_para { display: inline; }
       .ltx_item .ltx_para p { display: inline; }
-      .epub_footnote { font-size: 0.85em; color: #555; }
+      .epub-footnote-sep { margin-top: 2em; border: none; border-top: 1px solid #ccc; }
+      .epub-footnote { font-size: 0.85em; color: #333; margin: 0.4em 0; }
+      .epub-footnote sup { font-weight: 600; }
       .ltx_bibitem { display: flex; gap: 0.5em; margin-bottom: 0.75em; }
       .ltx_tag_bibitem { flex-shrink: 0; font-weight: 600; }
       .ltx_bibblock { display: inline; }
