@@ -164,7 +164,7 @@ export default function Home() {
                         setUrl(e.target.value);
                         if (status === "error") setStatus("idle");
                       }}
-                      placeholder="arxiv.org/abs/2301.12345"
+                      placeholder="https://arxiv.org/abs/1706.03762"
                       disabled={status === "loading"}
                       className="w-full border-0 bg-transparent font-serif text-xl text-[#2C2520] placeholder:text-[#C4B5A4] focus:outline-none disabled:opacity-50 sm:text-2xl"
                       autoComplete="off"
@@ -178,9 +178,6 @@ export default function Home() {
                     )}
 
                     <div className="mt-6 flex items-center justify-between">
-                      <p className="font-sans text-xs text-[#C4B5A4]">
-                        Paste a link or paper ID
-                      </p>
                       <button
                         type="submit"
                         disabled={!url.trim() || status === "loading"}
