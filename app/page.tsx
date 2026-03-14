@@ -31,7 +31,6 @@ export default function Home() {
         throw new Error(data.error || `Request failed (${res.status})`);
       }
 
-      // Extract filename from Content-Disposition
       const disposition = res.headers.get("Content-Disposition") || "";
       const filenameMatch = disposition.match(/filename="(.+?)"/);
       const filename = filenameMatch ? filenameMatch[1] : "paper.epub";
@@ -61,7 +60,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] selection:bg-[#E8DDD3]">
+    <div className="min-h-screen bg-sand-50 selection:bg-sand-200">
       {/* Subtle grain texture */}
       <div
         className="pointer-events-none fixed inset-0 opacity-[0.03]"
@@ -73,11 +72,11 @@ export default function Home() {
       <div className="relative flex min-h-screen flex-col items-center justify-center px-6">
         {/* Header mark */}
         <div className="mb-16 flex flex-col items-center">
-          <div className="mb-6 h-px w-12 bg-[#C4B5A4]" />
-          <h1 className="font-serif text-4xl font-light tracking-tight text-[#2C2520] sm:text-5xl">
+          <div className="mb-6 h-px w-12 bg-sand-400" />
+          <h1 className="font-serif text-4xl font-light tracking-tight text-sand-900 sm:text-5xl">
             arxiv to epub
           </h1>
-          <p className="mt-3 font-sans text-sm font-light tracking-wide text-[#8C7E6F]">
+          <p className="mt-3 font-sans text-sm font-light tracking-wide text-sand-500">
             Papers, made readable
           </p>
         </div>
@@ -89,18 +88,18 @@ export default function Home() {
               className={`
                 relative overflow-hidden rounded-2xl border transition-all duration-500
                 ${status === "error"
-                  ? "border-[#C4705A]/40 bg-[#FDF6F4] shadow-[0_2px_24px_rgba(196,112,90,0.08)]"
+                  ? "border-error/40 bg-error-bg shadow-[0_2px_24px_rgba(196,112,90,0.08)]"
                   : status === "done"
-                    ? "border-[#7A9E7E]/40 bg-[#F6FAF6] shadow-[0_2px_24px_rgba(122,158,126,0.08)]"
-                    : "border-[#DDD5CA] bg-white shadow-[0_2px_24px_rgba(44,37,32,0.04)] hover:shadow-[0_4px_32px_rgba(44,37,32,0.08)]"
+                    ? "border-success/40 bg-success-bg shadow-[0_2px_24px_rgba(122,158,126,0.08)]"
+                    : "border-sand-300 bg-white shadow-[0_2px_24px_rgba(44,37,32,0.04)] hover:shadow-[0_4px_32px_rgba(44,37,32,0.08)]"
                 }
               `}
             >
               {/* Loading bar */}
               {status === "loading" && (
-                <div className="absolute inset-x-0 top-0 h-0.5 overflow-hidden bg-[#E8DDD3]">
+                <div className="absolute inset-x-0 top-0 h-0.5 overflow-hidden bg-sand-200">
                   <div
-                    className="h-full w-1/3 bg-[#8C7E6F]"
+                    className="h-full w-1/3 bg-sand-500"
                     style={{
                       animation: "loading 1.5s ease-in-out infinite",
                     }}
@@ -111,7 +110,7 @@ export default function Home() {
               <div className="p-6 sm:p-8">
                 <label
                   htmlFor="arxiv-url"
-                  className="mb-3 block font-sans text-xs font-medium uppercase tracking-[0.15em] text-[#8C7E6F]"
+                  className="mb-3 block font-sans text-xs font-medium uppercase tracking-[0.15em] text-sand-500"
                 >
                   {status === "loading"
                     ? "Converting..."
@@ -124,7 +123,7 @@ export default function Home() {
                   <div className="flex flex-col gap-4">
                     <div className="flex items-start gap-3">
                       <svg
-                        className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#7A9E7E]"
+                        className="mt-0.5 h-5 w-5 shrink-0 text-success"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -137,10 +136,10 @@ export default function Home() {
                         />
                       </svg>
                       <div>
-                        <p className="font-serif text-lg text-[#2C2520]">
+                        <p className="font-serif text-lg text-sand-900">
                           {paperTitle}.epub
                         </p>
-                        <p className="mt-1 font-sans text-sm text-[#8C7E6F]">
+                        <p className="mt-1 font-sans text-sm text-sand-500">
                           Your download should have started automatically.
                         </p>
                       </div>
@@ -148,7 +147,7 @@ export default function Home() {
                     <button
                       type="button"
                       onClick={reset}
-                      className="font-sans text-sm font-medium text-[#8C7E6F] underline decoration-[#DDD5CA] underline-offset-4 transition-colors hover:text-[#2C2520] hover:decoration-[#8C7E6F]"
+                      className="font-sans text-sm font-medium text-sand-500 underline decoration-sand-300 underline-offset-4 transition-colors hover:text-sand-900 hover:decoration-sand-500"
                     >
                       Convert another paper
                     </button>
@@ -166,13 +165,13 @@ export default function Home() {
                       }}
                       placeholder="https://arxiv.org/abs/1706.03762"
                       disabled={status === "loading"}
-                      className="w-full border-0 bg-transparent font-serif text-xl text-[#2C2520] placeholder:text-[#C4B5A4] focus:outline-none disabled:opacity-50 sm:text-2xl"
+                      className="w-full border-0 bg-transparent font-serif text-xl text-sand-900 placeholder:text-sand-400 focus:outline-none disabled:opacity-50 sm:text-2xl"
                       autoComplete="off"
                       spellCheck={false}
                     />
 
                     {status === "error" && (
-                      <p className="mt-3 font-sans text-sm text-[#C4705A]">
+                      <p className="mt-3 font-sans text-sm text-error">
                         {error}
                       </p>
                     )}
@@ -184,8 +183,8 @@ export default function Home() {
                         className={`
                           rounded-lg px-5 py-2.5 font-sans text-sm font-medium transition-all duration-300
                           ${!url.trim() || status === "loading"
-                            ? "cursor-not-allowed bg-[#F0EBE4] text-[#C4B5A4]"
-                            : "bg-[#2C2520] text-[#FAF8F5] shadow-sm hover:bg-[#1A1512] hover:shadow-md active:scale-[0.98]"
+                            ? "cursor-not-allowed bg-sand-100 text-sand-400"
+                            : "bg-sand-900 text-sand-50 shadow-sm hover:bg-sand-950 hover:shadow-md active:scale-[0.98]"
                           }
                         `}
                       >
@@ -225,11 +224,11 @@ export default function Home() {
         </div>
 
         {/* Footer */}
-        <p className="mt-16 font-sans text-xs font-light text-[#C4B5A4]">
+        <p className="mt-16 font-sans text-xs font-light text-sand-400">
           Made by Austin and Claude.{" "}
           <a
             href="https://github.com/akrolsmir/arxiv-to-epub"
-            className="underline decoration-[#DDD5CA] underline-offset-2 transition-colors hover:text-[#8C7E6F]"
+            className="underline decoration-sand-300 underline-offset-2 transition-colors hover:text-sand-500"
           >
             Open source
           </a>

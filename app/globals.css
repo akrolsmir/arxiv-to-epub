@@ -3,4 +3,20 @@
 @theme inline {
   --font-sans: var(--font-body);
   --font-serif: var(--font-display);
+
+  /* Warm neutral scale */
+  --color-sand-50: #FAF8F5;
+  --color-sand-100: #F0EBE4;
+  --color-sand-200: #E8DDD3;
+  --color-sand-300: #DDD5CA;
+  --color-sand-400: #C4B5A4;
+  --color-sand-500: #8C7E6F;
+  --color-sand-900: #2C2520;
+  --color-sand-950: #1A1512;
+
+  /* Accents */
+  --color-error: #C4705A;
+  --color-error-bg: #FDF6F4;
+  --color-success: #7A9E7E;
+  --color-success-bg: #F6FAF6;
 }
